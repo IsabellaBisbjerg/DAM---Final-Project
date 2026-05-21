@@ -1,0 +1,206 @@
+```{r}
+library(tidyverse)
+library(tidytext)
+library(Sentida)
+```
+
+```{r, warning=FALSE}
+grundtvig_damer <- read_csv("data/Grundtvig damerne.csv")
+
+grundtvig_damer <- grundtvig_damer %>%
+  mutate(linenumber = row_number(),
+         brev = cumsum(str_detect(Text,
+                                     regex("^Kjære|^Min kjære",
+                                           ignore_case = TRUE))))
+grundtvig_damer_sentiment <- grundtvig_damer %>%
+  rowwise() %>%
+  mutate(sentiment = sentida(Text, output = "mean"))
+
+grundtvig_damer_sentiment_brev_gennemsnit <- grundtvig_damer_sentiment %>%
+  group_by(brev) %>%
+  summarise(gennemsnit_sentiment = mean(sentiment))
+```
+
+```{r}
+library(ggplot2)
+```
+
+```{r}
+ggplot(grundtvig_damer_sentiment_brev_gennemsnit, aes(x = factor(brev), y = gennemsnit_sentiment)) +
+  geom_col(fill="green") +
+  labs(
+    title = "Gennemsnitligt sentiment pr. brev",
+    x = "brev",
+    y = "gennemsnit_sentiment"
+    ) +
+  theme_minimal()
+```
+
+```{r, warning=FALSE}
+grundtvig_mænd <- read_csv("data/Grundtvig_mændene.csv")
+
+colnames(grundtvig_mænd)
+grundtvig_mænd <- grundtvig_mænd %>%
+  mutate(linenumber = row_number(),
+         brev = cumsum(str_detect(text,
+                                  regex("^Kjære|^Min kjære",
+                                        ignore_case = TRUE))))
+
+grundtvig_mænd_sentiment <- grundtvig_mænd %>%
+  rowwise() %>%
+  mutate(sentiment = sentida(text, output = "mean"))
+
+grundtvig_mænd_sentiment_brev_gennemsnit <- grundtvig_mænd_sentiment %>%
+  group_by(brev) %>%
+  summarise(gennemsnit_sentiment = mean(sentiment))
+```
+
+
+```{r}
+ggplot(grundtvig_mænd_sentiment_brev_gennemsnit, aes(x = factor(brev), y = gennemsnit_sentiment)) +
+  geom_col(fill="blue") +
+  labs(
+    title = "Gennemsnitligt sentiment pr. brev",
+    x = "brev",
+    y = "gennemsnit_sentiment"
+  ) +
+  theme_minimal()
+```
+
+```{r, warning=FALSE}
+CarolineAmalie <- read_csv("data/NyCarolineAmalie.csv")
+
+CarolineAmalie <- CarolineAmalie %>%
+  mutate(linenumber = row_number(),
+         brev = cumsum(str_detect(Text,
+                                  regex("^Kjære|^Min kjære|^HERR|^TIL|^HR|^Hjertelig",
+                                        ignore_case = TRUE))))
+
+Caroline_Amalie_sentiment <- CarolineAmalie %>%
+  rowwise() %>%
+  mutate(sentiment = sentida(Text, output = "mean"))
+
+Caroline_Amalie_sentiment_brev_gennemsnit <- Caroline_Amalie_sentiment %>%
+  group_by(brev) %>%
+  summarise(gennemsnit_sentiment = mean(sentiment))
+```
+
+```{r}
+ggplot(Caroline_Amalie_sentiment_brev_gennemsnit, aes(x = factor(brev), y = gennemsnit_sentiment)) +
+  geom_col(fill="red") +
+  labs(
+    title = "Gennemsnitligt sentiment pr. brev",
+    x = "brev",
+    y = "gennemsnit_sentiment"
+  ) +
+  theme_minimal()
+```
+
+```{r, warning=FALSE}
+Ørsted <- read_csv("data/Ørsted_breve.csv")
+
+Ørsted <- Ørsted %>%
+  mutate(linenumber = row_number(),
+         brev = cumsum(str_detect(Text,
+                                  regex("^Kjære|^Bedste|^Herr",
+                                        ignore_case = TRUE))))
+
+Ørsted_sentiment <- Ørsted %>%
+  rowwise() %>%
+  mutate(sentiment = sentida(Text, output = "mean"))
+
+Ørsted_sentiment_brev_gennemsnit <- Ørsted_sentiment %>%
+  group_by(brev) %>%
+  summarise(gennemsnit_sentiment = mean(sentiment))
+```
+
+```{r}
+ggplot(Ørsted_sentiment_brev_gennemsnit, aes(x = factor(brev), y = gennemsnit_sentiment)) +
+  geom_col(fill="purple") +
+  labs(
+    title = "Gennemsnitligt sentiment pr. brev",
+    x = "brev",
+    y = "gennemsnit_sentiment"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+grundtvig_damer_sentiment_brev_gennemsnit$person <- "Grundtvig damer"
+grundtvig_mænd_sentiment_brev_gennemsnit$person <- "Grundtvig mænd"
+Caroline_Amalie_sentiment_brev_gennemsnit$person <- "Caroline Amalie"
+Ørsted_sentiment_brev_gennemsnit$person <- "Ørsted"
+
+alle_data <- bind_rows(
+  grundtvig_damer_sentiment_brev_gennemsnit,
+  grundtvig_mænd_sentiment_brev_gennemsnit,
+  Caroline_Amalie_sentiment_brev_gennemsnit,
+  Ørsted_sentiment_brev_gennemsnit
+)
+```
+
+```{r}
+ggplot(alle_data, aes(x = brev, y = gennemsnit_sentiment, fill = person)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~person, scales = "free_x") +
+  labs(
+    title = "Gennemsnitligt sentiment pr. brev",
+    subtitle = "Analyse baseret på sætningsniveau (Sentida)",
+    x = "Brev",
+    y = "Gennemsnitligt sentiment"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    strip.text = element_text(face = "bold"),
+    plot.title = element_text(face = "bold")
+  )
+```
+
+```{r}
+ggplot(alle_data, aes(x = brev, y = gennemsnit_sentiment, color = person)) +
+geom_line(size = 1.2) +
+geom_point(size = 2) +
+
+labs(
+title = "Udvikling i sentiment over breve",
+x = "Brev (kronologisk)",
+y = "Gennemsnitligt sentiment",
+color = "Afsender"
+) +
+
+theme_minimal() +
+theme(
+text = element_text(size = 14),
+plot.title = element_text(face = "bold"),
+legend.position = "bottom"
+)
+```
+
+```{r}
+ggplot(alle_data, aes(x = brev, y = gennemsnit_sentiment, fill = gennemsnit_sentiment)) +
+  geom_col() +
+  facet_wrap(~person, scales = "free_x") +
+  scale_fill_gradient2(
+    low = "red",
+    mid = "white",
+    high = "darkgreen",
+    midpoint = 0
+  ) +
+  labs(
+    title = "Sentiment i breve over tid",
+    subtitle = "Rød = negativ, Grøn = positiv",
+    x = "Brev",
+    y = "Sentiment"
+  ) +
+  theme_minimal(base_size = 14)
+```
+
+```{r}
+sessionInfo()
+```
+
+```{r}
+sentida("Det var smukt af dig min Søn ikke at lade Tiden forløbe igjen uden at lade mig see lidt fra dig ", output = "mean")
+sentida("Jeg har nu læst den med megen Fornøielse", output = "mean")
+sentida("søn", output = "mean")
+```
