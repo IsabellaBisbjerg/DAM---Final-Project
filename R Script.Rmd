@@ -1,4 +1,14 @@
+---
+title: 'Sentiment analysis in the 19th century'
+date: 'created on 19 May 2026 and updated `r format(Sys.time(), "%d %B, %Y")`'
+output: html_document
+---
+
 ```{r}
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = FALSE,
+                      message = FALSE)
+
 library(tidyverse)
 library(tidytext)
 library(Sentida)
